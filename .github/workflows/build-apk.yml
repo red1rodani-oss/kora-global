@@ -1,5 +1,5 @@
 
-name: Build Android APK
+name: Build Kora Global APK
 
 on:
   workflow_dispatch:
@@ -7,15 +7,39 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Inspect and locate Android project
+        shell: bash
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Repository files:"
+          ls -la
+          echo "Searching for Gradle wrapper..."
+          GRADLEW_PATH="$(find . -type f -name gradlew -not -path '*/.git/*' -print -quit)"
+
+          if [ -z "$GRADLEW_PATH" ]; then
+            echo "::error::Could not find gradlew in the checked-out repository."
+            find . -maxdepth 4 -type f -print | head -200
+            exit 1
+          fi
+
+          PROJECT_DIR="$(dirname "$GRADLEW_PATH")"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "Found Gradle wrapper: $GRADLEW_PATH"
+          ls -la "$PROJECT_DIR"
+
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -24,20 +48,17 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Inspect project files
-        run: |
-          pwd
-          ls -la
-          find . -maxdepth 3 -name gradlew -o -name settings.gradle.kts
-
       - name: Build debug APK
+        shell: bash
         run: |
-          chmod +x gradlew
-          ./gradlew assembleDebug
-          
+          cd "$PROJECT_DIR"
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --stacktrace
+
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: kora-global-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
