@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Kora Global</string>
+    <string name="tab_matches">Matchs</string>
+    <string name="tab_competitions">Compétitions</string>
+    <string name="tab_standings">Classement</string>
+    <string name="tab_favorites">Favoris</string>
+    <string name="tab_live_tv">TV Officielle</string>
+    <string name="tab_settings">Paramètres</string>
+    <string name="demo_notice">Attention : Données de démonstration (DEMO DATA).</string>
+</resources>
